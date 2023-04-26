@@ -1,0 +1,13 @@
+﻿@page "/"
+<div>
+    <RadzenButton Size="ButtonSize.ExtraSmall" Click="Reset" Text="Reset"></RadzenButton>
+</div>
+@if (_showPage)
+{
+    
+    <DocGenerator></DocGenerator>
+}
+else
+{
+    <RadzenText TextStyle="TextStyle.DisplayH4" TextAlign="TextAlign.Center" Text="Resetting..."></RadzenText>
+}

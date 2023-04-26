@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net7.0-windows7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <UseWindowsForms>true</UseWindowsForms>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>AiGeneratedCodeDocs</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AI.Dev.OpenAI.GPT" Version="1.0.2" />
+        <PackageReference Include="Markdig.Signed" Version="0.31.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="7.0.81" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="7.0.0" />
+        <PackageReference Include="Radzen.Blazor" Version="4.10.0" />
+        <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="OpenAIDotNet">
+        <HintPath>..\..\BlazorWithSematicKernel\BlazorWithSematicKernel\Libs\OpenAIDotNet.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Update="wwwroot\css\app.css">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Update="wwwroot\css\bootstrap\bootstrap.min.css">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Update="wwwroot\index.html">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+</Project>

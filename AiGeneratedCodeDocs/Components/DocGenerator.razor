@@ -1,0 +1,17 @@
+﻿<RadzenRow>
+    <RadzenColumn Size="4">
+        <RadzenTemplateForm Data="_repoForm" Submit="Submit" TItem="SelectRepoForm" Style="width:100%">
+            <RadzenFormField Variant="Variant.Filled" Text="Select Repo" Style="width:100%">
+                <RadzenDropDown AllowFiltering="true" Style="width:100%" Name="Repos" Data="Repos" @bind-Value="_repoForm.RepoDir" TextProperty="@nameof(DirInfo.DirName)"></RadzenDropDown>
+            </RadzenFormField>
+            <RadzenRequiredValidator Component="Repos"></RadzenRequiredValidator>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Generate Doc" BusyText="Generating..." IsBusy=_isBusy></RadzenButton>
+        </RadzenTemplateForm>
+    </RadzenColumn>
+    <RadzenColumn Size="8">
+        <RadzenCard Style="width: 100%; max-height: 30rem; overflow: auto">
+            @((MarkupString)ToMarkdownHtml(_markdown))
+        </RadzenCard>
+        <RadzenText TextStyle="TextStyle.Overline" Text="@($"Total Input Tokens: {_inputTokens}")"></RadzenText>
+    </RadzenColumn>
+</RadzenRow>

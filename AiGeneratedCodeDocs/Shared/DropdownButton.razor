@@ -1,0 +1,23 @@
+﻿@typeparam TItem
+
+<div class="dropdown">
+    <div class="dd-grid">
+        <div style="border-right:solid 1px black" class="dd-button" @onclick=HandleClick>
+            @_text
+        </div>
+        <div class="dd-button-after" @onclick=@(() => _isOpen = true)>
+            @*<span class="dd-button-after"></span>*@
+            @*<input type="checkbox" class="dd-input" id="test">*@
+        </div>
+    </div>
+    @if (_isOpen)
+    {
+        <ul class="dd-menu">
+            @foreach (var item in _itemNames)
+            {
+                <li @onclick=@(() => HandleSelect(item.Key))>@item.Key</li>
+            }
+        </ul>
+    }
+</div>
+

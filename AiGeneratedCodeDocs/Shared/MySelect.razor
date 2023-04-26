@@ -1,0 +1,21 @@
+﻿@typeparam TItem
+
+<div>
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label for="standard-select">@Label</label>
+    }
+    <div class="select">
+        <select id="standard-select" @onchange="SelectionChanged">
+            @if (SelectedValue == null)
+            {
+                <option value="">@Label...</option>
+            }
+            @foreach (var option in _optionPairs)
+            {
+                <option value="@option.Key" class="item">@option.Value?.GetStringPropValue(DisplayPropertyName)</option>
+            }
+        </select>
+        <span class="focus"></span>
+    </div>
+</div>
