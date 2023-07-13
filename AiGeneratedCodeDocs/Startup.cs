@@ -24,10 +24,11 @@ namespace AiGeneratedCodeDocs
             services.AddWindowsFormsBlazorWebView();
             var client = new HttpClient();
             client.Timeout = TimeSpan.FromMinutes(10);
+            var config = context.Configuration;
             services.AddSingleton(client);
             services.AddOpenAIDotNet(o =>
             {
-                o.ApiKey = "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";
+                o.ApiKey = config["OPENAI_API_KEY"];
                 o.Organization = "org-vzjblyRugVShXOXHAgmIRTuQ";
             });
             services.AddSingleton<CreateDocumentService>();

@@ -7,18 +7,34 @@
         <UseWindowsForms>true</UseWindowsForms>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>AiGeneratedCodeDocs</RootNamespace>
+        <UserSecretsId>125998bc-3c35-4af2-b171-4b89b961093c</UserSecretsId>
     </PropertyGroup>
+
+    <ItemGroup>
+      <None Remove="Skills\CodeDocGenSkill\DocumentCode\skprompt.txt" />
+      <None Remove="Skills\CodeDocGenSkill\Summarize\skprompt.txt" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Skills\CodeDocGenSkill\DocumentCode\skprompt.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="Skills\CodeDocGenSkill\Summarize\skprompt.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="AI.Dev.OpenAI.GPT" Version="1.0.2" />
         <PackageReference Include="Markdig.Signed" Version="0.31.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="7.0.81" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="7.0.92" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="7.0.0" />
-        <PackageReference Include="Radzen.Blazor" Version="4.10.0" />
+        <PackageReference Include="Microsoft.SemanticKernel" Version="0.17.230711.7-preview" />
+        <PackageReference Include="Radzen.Blazor" Version="4.13.5" />
         <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
     </ItemGroup>
 
@@ -29,6 +45,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Content Update="Skills\CodeDocGenSkill\DocumentCode\config.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Update="Skills\CodeDocGenSkill\Summarize\config.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Content Update="wwwroot\css\app.css">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
