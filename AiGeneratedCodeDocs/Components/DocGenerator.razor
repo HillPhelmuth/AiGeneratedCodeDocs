@@ -1,71 +1,54 @@
 ﻿<RadzenRow>
     <RadzenColumn Size="5">
-        <RadzenTemplateForm Data="_repoForm" Submit="Submit" TItem="SelectRepoForm" Style="width:100%">
-            <RadzenFormField Variant="Variant.Filled" Text="Repo Path" Style="width:100%">
-                <ChildContent>
-                    <RadzenTextBox Name="Repos" @bind-Value="@_repoForm.RepoBase" Style="width:100%"></RadzenTextBox>
-                </ChildContent>
-                <Helper>
-                    <RadzenRequiredValidator Component="Repos" Text="Repo Path is required" Popup="true"></RadzenRequiredValidator>
-                </Helper>
-            </RadzenFormField>
-            <RadzenFormField Variant="Variant.Filled" Text="Output Directory" Style="width:100%">
-                <ChildContent>
-                    <RadzenTextBox Name="Output" @bind-Value="@_repoForm.OutputDir" Style="width:100%"></RadzenTextBox>
-                </ChildContent>
-                <Helper>
-                    <RadzenText TextStyle="TextStyle.Caption" Text="Generated markdown file will be saved here"></RadzenText>
-                    <RadzenRequiredValidator Component="Output" Text="Output Directory is required" Popup="true"></RadzenRequiredValidator>
-                </Helper>
-            </RadzenFormField>
-            <RadzenCard Style="padding-left:0;padding-right: 0">
-                <RadzenTree ValueChanged="OnSelected" Data="entries" Expand="LoadFiles" Style="width: 100%; height: 20rem; overflow:auto">
-                    <RadzenTreeLevel Text=@GetTextForNode Template=@FileOrFolderTemplate />
-                </RadzenTree>
-            </RadzenCard>
-            
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Generate Doc" BusyText="Generating..." IsBusy=_isBusy></RadzenButton>
-        </RadzenTemplateForm>
-        <RadzenText TextStyle="TextStyle.Caption" Text="@selectedDir"></RadzenText>
+        @if (string.IsNullOrEmpty(_repoPath))
+        {
+            <RadzenTemplateForm Data="_setRepoForm" TItem="SetRepoForm" Submit="SubmitRepo">
+                <RadzenFormField Variant="Variant.Filled" Text="Repo Path" Style="width:100%">
+                    <ChildContent>
+                        <RadzenTextBox Name="Repos" @bind-Value="@_setRepoForm.RepoPath" Style="width:100%"></RadzenTextBox>
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Repos" Text="Repo Path is required" Popup="true"></RadzenRequiredValidator>
+                    </Helper>
+                </RadzenFormField>
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Set Repo Path" IsBusy=_isBusy BusyText="Loading..."></RadzenButton>
+            </RadzenTemplateForm>
+        }
+        else
+        {
+            <RadzenTemplateForm Data="_repoForm" Submit="Submit" TItem="SelectRepoForm" Style="width:100%">
+                @if (!_repoForm.UseSelectedAsOutput)
+                {
+                    <RadzenFormField Variant="Variant.Filled" Text="Output Directory" Style="width:100%">
+                        <ChildContent>
+                            <RadzenTextBox Name="Output" @bind-Value="@_repoForm.OutputDir" Style="width:100%"></RadzenTextBox>
+                        </ChildContent>
+                        <Helper>
+                            <RadzenText TextStyle="TextStyle.Caption" Text="Generated markdown file will be saved here"></RadzenText>
+                            <RadzenRequiredValidator Visible="@(!_repoForm.UseSelectedAsOutput)" Component="Output" Text="Output Directory is required" Popup="true"></RadzenRequiredValidator>
+                        </Helper>
+                    </RadzenFormField>
+                }
+                <RadzenCheckBox TValue="bool" @bind-Value=_repoForm.UseSelectedAsOutput></RadzenCheckBox> Use selected folder as output
+                <RadzenCard Style="padding-left:0;padding-right: 0">
+                    <RadzenText Text="Generates Markdown for all code files in selected directory"></RadzenText>
+                    <RadzenTree ValueChanged="OnSelected" Data="entries" Expand="LoadFiles" Style="width: 100%; height: 20rem; overflow:auto">
+                        <RadzenTreeLevel Text=@GetTextForNode Template=@FileOrFolderTemplate />
+                    </RadzenTree>
+                </RadzenCard>
+
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Generate Doc" BusyText="Generating..." IsBusy=_isBusy></RadzenButton>
+            </RadzenTemplateForm>
+            <RadzenText TextStyle="TextStyle.Caption" Text="@selectedDir"></RadzenText>
+            <RadzenButton Size=ButtonSize.Small Click="@(() => _repoPath = "")" Text="Change Repo Path"></RadzenButton>
+        }
+
     </RadzenColumn>
     <RadzenColumn Size="7">
         <RadzenCard Style="width: 100%; max-height: 30rem; overflow: auto">
             @((MarkupString)ToMarkdownHtml(_markdown))
         </RadzenCard>
         <RadzenText TextStyle="TextStyle.Overline" Text="@($"Total Input Tokens: {_inputTokens}")"></RadzenText>
+        <RadzenButton Text="Open Readme.md" Click="OpenMarkdownFile"></RadzenButton>
     </RadzenColumn>
 </RadzenRow>
-@code
-{
-    //void LoadFiles(TreeExpandEventArgs args)
-    //{
-    //    var directory = args.Value as DirInfo;
-
-    //    args.Children.Data = Directory.EnumerateFileSystemEntries(directory.DirFullPath);
-    //    args.Children.Text = GetTextForNode;
-    //    args.Children.HasChildren = (path) =>
-    //    {
-    //        if (path is DirInfo dirInfo)
-    //            return Directory.Exists(dirInfo.DirFullPath);
-    //        return false;
-    //    };
-    //    args.Children.Template = FileOrFolderTemplate;
-    //}
-
-    //string GetTextForNode(object data)
-    //{
-    //    var dirInfo = data as DirInfo;
-    //    return Path.GetFileName(dirInfo.DirFullPath);
-    //}
-
-    //RenderFragment<RadzenTreeItem> FileOrFolderTemplate = (context) => builder =>
-    //{
-    //    var path = context.Value as DirInfo;
-    //    bool isDirectory = Directory.Exists(path.DirFullPath);
-
-    //    builder.OpenComponent<RadzenIcon>(0);
-    //    builder.AddAttribute(1, nameof(RadzenIcon.Icon), isDirectory ? "folder" : "insert_drive_file");
-    //    builder.CloseComponent();
-    //    builder.AddContent(3, context.Text);
-    //};
-}

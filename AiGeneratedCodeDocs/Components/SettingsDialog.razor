@@ -1,0 +1,52 @@
+﻿@inherits AppComponentBase
+<RadzenCard class="settings-grid">
+    <RadzenTemplateForm Data="_settingsForm" Submit="Submit" TItem="AppSettings">
+        <RadzenRow>
+            <RadzenColumn Size="6">
+                <RadzenFormField Style="width: 100%" Text="Application name">
+                    <RadzenTextBox Name="AppName" @bind-Value=@_settingsForm.Name></RadzenTextBox>
+                </RadzenFormField>
+                <RadzenRequiredValidator Component="AppName" Text="Name Required" Popup=true Style="position:absolute"></RadzenRequiredValidator>
+            </RadzenColumn>
+            <RadzenColumn Size="6">
+                <RadzenFormField Style="width: 100%" Text="Application/Repo Path">
+                    <RadzenTextBox Name="RepoPath" @bind-Value=@_settingsForm.AppPath Style="width: 100%"></RadzenTextBox>
+                </RadzenFormField>
+                <RadzenRequiredValidator Component="RepoPath" Text="Path Required" Popup=true Style="position:absolute"></RadzenRequiredValidator>
+            </RadzenColumn>
+            
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn Size="6">
+                <RadzenFormField Style="width: 100%"  Text="Select Languages">
+                     <RadzenDropDown Style="width: 100%" Data="_languageOptions" @bind-Value="@_settingsForm.Languages" Multiple=true ValueProperty="Language" TextProperty="Description" Chips=true></RadzenDropDown>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="6">
+                <RadzenFormField Style="width: 100%" Text="Framework Description">
+                    <RadzenTextBox Name="Framework" @bind-Value=_settingsForm.AppFramework Placeholder="(.net core Web Api, Angular app, etc.)" Style="width: 100%"></RadzenTextBox>
+                </RadzenFormField>
+                <RadzenRequiredValidator Component="Framework" Text="Framework Required" Popup=true Style="position:absolute"></RadzenRequiredValidator>
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn Size="6">
+                <RadzenText TextStyle="TextStyle.Body1" Text="Technical Details"></RadzenText>
+                <RadzenText TextStyle="TextStyle.Overline" Text="Include any salient details that aren't obvious from the code such as abbreations"></RadzenText>
+                <RadzenTextArea Name="Technical" @bind-Value=_settingsForm.TechnicalDescription Placeholder="(ex. 'Angular application that runs in an Electron shell. DDM = Data Domain Model')" Style="width:100%; height:10rem"></RadzenTextArea>
+                <RadzenRequiredValidator Component="Technical" Text="Technical Details Required" Popup=true Style="position:absolute"></RadzenRequiredValidator>
+            </RadzenColumn>
+            <RadzenColumn Size="6">
+                <RadzenText TextStyle="TextStyle.Body1" Text="App Domain Description"></RadzenText>
+                <RadzenTextArea Name="Domain" @bind-Value=_settingsForm.DomainDescription Placeholder="(ex. 'large set of no-code/low-code tools used by Tax Experts to generate tax-related software')" Style="width:100%; height:10rem"></RadzenTextArea>
+                <RadzenRequiredValidator Component="Domain" Text="Description Required" Popup=true Style="position:absolute"></RadzenRequiredValidator>
+            </RadzenColumn>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenCard>
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Submit"></RadzenButton>
+            </RadzenCard>
+        </RadzenRow>
+    </RadzenTemplateForm>
+</RadzenCard>
+

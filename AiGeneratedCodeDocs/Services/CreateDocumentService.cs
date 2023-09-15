@@ -9,7 +9,6 @@ namespace AiGeneratedCodeDocs.Services
 {
     public class CreateDocumentService
     {
-        //private readonly OpenAIDotNetService _openAiService;
         private StringBuilder _docBuilder;
         private readonly ILogger<CreateDocumentService> _logger; 
         private readonly IConfiguration _configuration;
@@ -20,9 +19,15 @@ namespace AiGeneratedCodeDocs.Services
             _logger = logger;
             _logger.LogInformation("CreateDocumentService Initialized");
             _configuration = configuration;
+            var deploymentName = _configuration["ChatDeployment"];
+            var apiKey = _configuration["ApiKey"];
+            var endpoint = _configuration["Endpoint"];
+            if (deploymentName is null || apiKey is null || endpoint is null)
+                throw new ArgumentException($"Azure OpenAI Deployment name, endpoint, and/or Api key is missing.");
             _kernel = Kernel.Builder
                 .WithLogger(_logger)
-                .WithOpenAIChatCompletionService("gpt-3.5-turbo-16k", _configuration["OPENAI_API_KEY"], alsoAsTextCompletion: true)
+                //.WithOpenAIChatCompletionService("gpt-3.5-turbo-16k", _configuration["OPENAI_API_KEY"], alsoAsTextCompletion: true)
+                .WithAzureChatCompletionService(deploymentName, endpoint, apiKey, alsoAsTextCompletion:true)
                 .Build();
         }
         public static string SkillsDirectoryPath => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory(), "Skills");
@@ -43,7 +48,12 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
 {{$code}}
 </code>
 """;
-        public async Task<string> GenerateMarkdownDocs(string code, string userName = "test")
+        /// <summary>
+        /// Uses Azure OpenAI with Semantic Kernel to generate Markdown documents from code
+        /// </summary>
+        /// <param name="code">The code to document</param>
+        /// <returns></returns>
+        public async Task<string> GenerateMarkdownDocs(string code)
         {
             
             var docTokens = Helpers.GetTokens(_docBuilder.ToString());
@@ -55,7 +65,7 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
             {
                 var tokens = docTokens + sysTokens + MaxResponseTokens;
                 _logger.LogInformation("Generateing Summary. Token Length: {tokens}", tokens);
-                doc = await Summarize(userName, _docBuilder.ToString());
+                doc = await Summarize(_docBuilder.ToString());
                 _docBuilder = new StringBuilder(doc);
             }
             else            
@@ -67,28 +77,23 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
                 var combinedContent = "";
                 foreach (var section in sections)
                 {
-                    var genContent = await GetMarkdownFromAi(section, userName, _docBuilder.ToString());
+                    var genContent = await GetMarkdownFromAi(section, _docBuilder.ToString());
                     combinedContent += genContent;
                 }
                 return combinedContent;
             }
-            return await GetMarkdownFromAi(code, userName, doc);
+            return await GetMarkdownFromAi(code, doc);
         }
 
-        private async Task<string> Summarize(string userName, string document)
+        private async Task<string> Summarize(string document)
         {
             var oldDocTokens = Helpers.GetTokens(document);
             _logger.LogInformation("Summarizing Document of Token Length: {oldDocTokens}", oldDocTokens);
             var docSkill = _kernel.ImportSemanticSkillFromDirectory(SkillsDirectoryPath, "CodeDocGenSkill");
-            var ctx = _kernel.CreateNewContext();
             
-            var result = await _kernel.RunAsync(ctx.Variables, docSkill["Summarize"]);
+            var result = await _kernel.RunAsync(document, docSkill["Summarize"]);
             var content = result.Result;
-            //var summaryPrompt = "Generate a summary of the document. Make it about half the size of the document.";
-            //var summaryRequest = GetChatRequestModel(userName,
-            //    new List<Message> {Message.Create(summaryPrompt, Role.System), Message.Create(document)});
-            //var summaryResponse = await _openAiService.ChatService.Create(summaryRequest);
-            //string doc = summaryResponse?.Choices?[0]?.Message?.Content ?? "No Content in response";
+            _logger.LogInformation("Document summary completed.\nSummary:\n{content}", content);
             var newDocTokens = Helpers.GetTokens(content);
             _logger.LogInformation("Summary Generated. Token Length: {newDocTokens}", newDocTokens);
             return content;
@@ -97,7 +102,7 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
         private const int MinTokens = 2000;
         private const int MaxTokens = 3000;
         private const int MaxResponseTokens = 1500;
-        private const int MaxModelWindow = 16000;
+        private const int MaxModelWindow = 16384;
 
         public static List<string> SplitCodeToSections(string code, int minTokens = 0)
         {
@@ -146,45 +151,21 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
             var trimmed = line.TrimStart();
             return trimmed.StartsWith("public") || trimmed.StartsWith("private") || trimmed.StartsWith("protected");
         }
-        private async Task<string> GetMarkdownFromAi(string code, string userName, string? doc)
+        private async Task<string> GetMarkdownFromAi(string code, string doc)
         {
             var docSkill = _kernel.ImportSemanticSkillFromDirectory(SkillsDirectoryPath, "CodeDocGenSkill");
             var ctx = _kernel.CreateNewContext();
-            ctx["summary"] = doc;
-            ctx["code"] = code;
+            ctx.Variables["summary"] = doc;
+            ctx.Variables["code"] = code;
             var result = await _kernel.RunAsync(ctx.Variables, docSkill["DocumentCode"]);
             var content = result.Result;
             Console.WriteLine(content);
             _docBuilder.AppendLine(content);
             _docBuilder.AppendLine();
             return content;
-            //var mkDownDocSysPromptText = $"{doc}\n{MkDownDocSysPromptText}";
-            //var messages = new List<Message> {Message.Create(mkDownDocSysPromptText, Role.System), Message.Create(code)};
-            //var chatRequest = GetChatRequestModel(userName, messages);
-
-            //var response = await _openAiService.ChatService.Create(chatRequest);
-            //if (!response.Successful)
-            //{
-            //    return $"It looks like the request failed! Reason: {response.Error!.Message}";
-            //}
-
-            //var content = response.Choices[0].Message.Content;
-
+            
         }
 
-        //private static ChatRequestModel GetChatRequestModel(string userName, List<Message> messages)
-        //{
-        //    var chatRequest = new ChatRequestModel
-        //    {
-        //        MaxTokens = 500,
-        //        Temperature = 0.7f,
-        //        N = 1,
-        //        Messages = messages,
-        //        User = userName,
-        //        Model = "gpt-3.5-turbo-16k",
-        //        TopP = 0.5f
-        //    };
-        //    return chatRequest;
-        //}
+       
     }
 }

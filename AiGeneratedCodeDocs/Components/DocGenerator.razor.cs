@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 namespace AiGeneratedCodeDocs.Components
 {
@@ -19,16 +20,16 @@ namespace AiGeneratedCodeDocs.Components
         [Inject]
         private ILogger<DocGenerator> Logger { get; set; } = default!;
         private string _markdown = string.Empty;
-        private string? _repoPath = @"C:\Users\adamh\source\repos";
+        private string? _repoPath = @"";
         private IEnumerable<DirInfo> entries;
 
         protected override Task OnInitializedAsync()
         {
-            entries = GetRepos();
+            //entries = GetRepos();
             return base.OnInitializedAsync();
         }
 
-        private List<DirInfo> GetRepos()
+        private Task<List<DirInfo>> GetRepos()
         {
             var dirs = Directory.EnumerateDirectories(_repoPath).Where(entry =>
             {
@@ -48,8 +49,8 @@ namespace AiGeneratedCodeDocs.Components
 
             }
 
-            return result;
-            var repos = dirs.Select(x => new DirInfo(Path.GetFileName(x), x)).ToList();
+            return Task.FromResult(result);
+            //var repos = dirs.Select(x => new DirInfo(Path.GetFileName(x), x)).ToList();
         }
 
         private List<DirInfo> GetSubDirectories(DirInfo dirInfo)
@@ -73,12 +74,28 @@ namespace AiGeneratedCodeDocs.Components
         }
         private class SelectRepoForm
         {
-            public string RepoBase { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "source", "repos");
+            public string RepoBase { get; set; } = @"";
             public DirInfo? RepoDir { get; set; }
             public string? OutputDir { get; set; }
+            public bool UseSelectedAsOutput { get; set; }
         }
         private SelectRepoForm _repoForm = new();
-
+        private class SetRepoForm
+        {
+            public string? RepoPath { get; set; }
+        }
+        private SetRepoForm _setRepoForm = new();
+        private async void SubmitRepo(SetRepoForm form)
+        {
+            _isBusy = true;
+            StateHasChanged();
+            await Task.Delay(1);
+            _repoPath = form.RepoPath;
+            _repoForm.RepoBase = form.RepoPath;
+            entries = await GetRepos();
+            _isBusy = false;
+            StateHasChanged();
+        }
         private record DirInfo(string DirName, string DirFullPath)
         {
             public List<DirInfo>? SubDirectories { get; set; }
@@ -87,6 +104,9 @@ namespace AiGeneratedCodeDocs.Components
         private bool _isBusy;
         private async void Submit(SelectRepoForm selectRepoForm)
         {
+            if (selectRepoForm.RepoDir == null) return;
+            if (selectRepoForm.UseSelectedAsOutput)
+                selectRepoForm.OutputDir = selectRepoForm.RepoDir.DirFullPath;
             _isBusy = true;
             StateHasChanged();
             await Task.Delay(1);
@@ -94,8 +114,9 @@ namespace AiGeneratedCodeDocs.Components
             _isBusy = false;
             StateHasChanged();
         }
-
+        
         private int _inputTokens = 0;
+        private string? _outputPath;
         private async Task GenerateCodeDoc(string path)
         {
             var files = Directory.EnumerateFiles(path, "*.*", searchOption: SearchOption.AllDirectories).Where(x => x.EndsWith(".razor") || x.EndsWith(".cs") && !x.EndsWith(".g.cs"));
@@ -111,11 +132,20 @@ namespace AiGeneratedCodeDocs.Components
                 StateHasChanged();
 
             }
+            _repoForm.OutputDir ??= path;
             var markdown = sb.ToString();
-            var fileName = $"{_repoForm.RepoDir?.DirName}docs.md";
+            var fileName = $"Readme.md";
             if (!Directory.Exists(_repoForm.OutputDir))
                 Directory.CreateDirectory(_repoForm.OutputDir);
-            await File.WriteAllTextAsync(Path.Combine(_repoForm.OutputDir ?? "", fileName), markdown);
+            string outputPath = Path.Combine(_repoForm.OutputDir ?? "", fileName);
+            _outputPath = outputPath;
+            await File.WriteAllTextAsync(outputPath, markdown);
+        }
+        private void OpenMarkdownFile()
+        {
+            if (string.IsNullOrWhiteSpace(_outputPath)) return;
+            var vscodePath = @"C:\Users\a876302\AppData\Local\Programs\Microsoft VS Code\Code.exe";
+            Process.Start(vscodePath, _outputPath);
         }
         public Dictionary<string, string> ReadFilesInDirectory(string directoryPath)
         {
@@ -200,7 +230,7 @@ namespace AiGeneratedCodeDocs.Components
             if (item is not DirInfo dirInfo) return;
             selectedDir = dirInfo.DirFullPath;
             _repoForm.RepoDir = dirInfo;
-            _repoForm.OutputDir ??= dirInfo.DirFullPath;
+            
             StateHasChanged();
 
         }

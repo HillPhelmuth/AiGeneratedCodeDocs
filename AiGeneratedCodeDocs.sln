@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AiGeneratedCodeDocs", "AiGeneratedCodeDocs\AiGeneratedCodeDocs.csproj", "{426B4BA5-3C31-45ED-934E-863CD8E2DD5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AiGeneratedCodeDocsTests", "AiGeneratedCodeDocsTests\AiGeneratedCodeDocsTests.csproj", "{84B27EC6-7F84-4CA7-B1D3-9F69D1AC7E84}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AiGeneratedCodeDocsTests", "AiGeneratedCodeDocsTests\AiGeneratedCodeDocsTests.csproj", "{84B27EC6-7F84-4CA7-B1D3-9F69D1AC7E84}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

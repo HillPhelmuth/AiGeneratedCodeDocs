@@ -11,6 +11,15 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Components\SettingsDialog.razor.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="Components\SettingsDialog.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Components\SettingsDialog.razor.css" />
       <None Remove="Skills\CodeDocGenSkill\DocumentCode\skprompt.txt" />
       <None Remove="Skills\CodeDocGenSkill\Summarize\skprompt.txt" />
     </ItemGroup>
