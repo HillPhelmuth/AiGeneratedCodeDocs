@@ -2,8 +2,8 @@ using AiGeneratedCodeDocs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OpenAIDotNet;
-using OpenAIDotNet.Extensions;
+using Radzen;
+
 
 namespace AiGeneratedCodeDocs
 {
@@ -26,11 +26,8 @@ namespace AiGeneratedCodeDocs
             client.Timeout = TimeSpan.FromMinutes(10);
             var config = context.Configuration;
             services.AddSingleton(client);
-            services.AddOpenAIDotNet(o =>
-            {
-                o.ApiKey = config["OPENAI_API_KEY"];
-                o.Organization = "org-vzjblyRugVShXOXHAgmIRTuQ";
-            });
+            services.AddRadzenComponents();
+            services.AddSingleton<AppState>();
             services.AddSingleton<CreateDocumentService>();
             services.AddSingleton<ILoggerFactory>(new Serilog.Extensions.Logging.SerilogLoggerFactory());
 

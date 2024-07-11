@@ -1,8 +1,10 @@
 ﻿<RadzenRow>
     <RadzenColumn Size="5">
+        <RadzenButton Text="Add Details" Size="ButtonSize.ExtraSmall" Click="AddDetails"></RadzenButton>
         @if (string.IsNullOrEmpty(_repoPath))
         {
             <RadzenTemplateForm Data="_setRepoForm" TItem="SetRepoForm" Submit="SubmitRepo">
+                <RadzenButton Size=ButtonSize.ExtraSmall ButtonType="ButtonType.Button" Text="Select Folder" Click="SelectDir"></RadzenButton>
                 <RadzenFormField Variant="Variant.Filled" Text="Repo Path" Style="width:100%">
                     <ChildContent>
                         <RadzenTextBox Name="Repos" @bind-Value="@_setRepoForm.RepoPath" Style="width:100%"></RadzenTextBox>
@@ -11,7 +13,7 @@
                         <RadzenRequiredValidator Component="Repos" Text="Repo Path is required" Popup="true"></RadzenRequiredValidator>
                     </Helper>
                 </RadzenFormField>
-                <RadzenButton ButtonType="ButtonType.Submit" Text="Set Repo Path" IsBusy=_isBusy BusyText="Loading..."></RadzenButton>
+                <RadzenButton Size=ButtonSize.ExtraSmall ButtonType="ButtonType.Submit" Text="Set Repo Path" IsBusy=_isBusy BusyText="Loading..."></RadzenButton>
             </RadzenTemplateForm>
         }
         else
@@ -29,6 +31,9 @@
                         </Helper>
                     </RadzenFormField>
                 }
+                <RadzenFormField Text="File Name">
+                    <RadzenTextBox @bind-Value=_repoForm.OutputFileName></RadzenTextBox>
+                </RadzenFormField>
                 <RadzenCheckBox TValue="bool" @bind-Value=_repoForm.UseSelectedAsOutput></RadzenCheckBox> Use selected folder as output
                 <RadzenCard Style="padding-left:0;padding-right: 0">
                     <RadzenText Text="Generates Markdown for all code files in selected directory"></RadzenText>

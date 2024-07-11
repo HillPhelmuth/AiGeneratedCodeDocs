@@ -17,6 +17,9 @@ public class AppState : INotifyPropertyChanged
     private UserData? _userData;
     private string theme = "standard";
     private string? baseRepoPath;
+    private string? domainDescription;
+    private string? technicalDetails;
+    private string? previousSummaries;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -69,6 +72,33 @@ public class AppState : INotifyPropertyChanged
         }
     }
     public bool IsGpt4 { get; set; } = true;
+    public string? DomainDescription
+    {
+        get => domainDescription; 
+        set
+        {
+            domainDescription = value;
+            OnPropertyChanged();
+        }
+    }
+    public string? TechnicalDetails
+    {
+        get => technicalDetails; 
+        set
+        {
+            technicalDetails = value;
+            OnPropertyChanged();
+        }
+    }
+    public string? PreviousSummaries
+    {
+        get => previousSummaries; 
+        set
+        {
+            previousSummaries = value;
+            OnPropertyChanged();
+        }
+    }
     public void SaveUser()
     {
         var json = JsonSerializer.Serialize(UserData);

@@ -1,0 +1,39 @@
+﻿<RadzenCard>
+    <RadzenTemplateForm TItem="SettingsForm" Data="_settingsForm" Submit="Submit">
+        <RadzenRow>
+            <RadzenColumn Size="12">
+                <RadzenFormField Text="Technical details" Style="width:100%">
+                    <ChildContent>
+                        <RadzenTextArea Style="width:100%;height:8rem" @bind-Value=_settingsForm.TechnicalDetails></RadzenTextArea>
+                    </ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption" Text="Technical details about the project that might provide context for code documentation"></RadzenText>
+                    </Helper>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12">
+                <RadzenFormField Text="Domain Description" Style="width:100%">
+                    <ChildContent>
+                        <RadzenTextArea Style="width:100%;height:8rem" @bind-Value=_settingsForm.DomainDescription></RadzenTextArea>
+                    </ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption" Text="Description of the domain of the project to provide context for documentation"></RadzenText>
+                    </Helper>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12">
+                <RadzenButton Size="ButtonSize.ExtraSmall" Text="Select Files" Click="OpenFilePicker"></RadzenButton>
+                <RadzenFormField Text="Previously Generated Markdown Files" Style="width:100%">
+                    <ChildContent>
+                        <RadzenListBox TValue="List<string>" @bind-Value=_settingsForm.PreviousSummaries Data=_settingsForm.PreviousSummaries></RadzenListBox>
+                    </ChildContent>
+                    <Helper>
+                        <RadzenText TextStyle="TextStyle.Caption" Text="Name of the project"></RadzenText>
+                    </Helper>
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+        <br />
+        <RadzenButton ButtonType="ButtonType.Submit" Text="Submit" IsBusy=_isBusy BusyText="Updating..."></RadzenButton>
+    </RadzenTemplateForm>
+</RadzenCard>

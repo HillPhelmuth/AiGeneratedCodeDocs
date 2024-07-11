@@ -1,19 +1,20 @@
-﻿using AI.Dev.OpenAI.GPT;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Tiktoken;
 
 namespace AiGeneratedCodeDocs.Models
 {
     public static class Helpers
     {
+        private static Encoding? _encoding;
         public static int GetTokens(string text)
         {
-            var tokens = GPT3Tokenizer.Encode(text);
-            return tokens.Count;
+            _encoding ??= Encoding.ForModel("gpt-3.5-turbo");
+            var tokens = _encoding.CountTokens(text);
+            return tokens;
         }
         public static string ToEnumDescription<T>(this T value) where T : Enum
         {

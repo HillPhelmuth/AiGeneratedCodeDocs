@@ -19,6 +19,8 @@ namespace AiGeneratedCodeDocs.Components
         private CreateDocumentService CreateDocumentService { get; set; } = default!;
         [Inject]
         private ILogger<DocGenerator> Logger { get; set; } = default!;
+        [Inject]
+        private DialogService DialogService { get; set; } = default!;
         private string _markdown = string.Empty;
         private string? _repoPath = @"";
         private IEnumerable<DirInfo> entries;
@@ -28,7 +30,10 @@ namespace AiGeneratedCodeDocs.Components
             //entries = GetRepos();
             return base.OnInitializedAsync();
         }
-
+        private void AddDetails()
+        {
+            DialogService.Open<SettingsWindow>("Add Settings");
+        }
         private Task<List<DirInfo>> GetRepos()
         {
             var dirs = Directory.EnumerateDirectories(_repoPath).Where(entry =>
@@ -77,6 +82,7 @@ namespace AiGeneratedCodeDocs.Components
             public string RepoBase { get; set; } = @"";
             public DirInfo? RepoDir { get; set; }
             public string? OutputDir { get; set; }
+            public string? OutputFileName { get; set; }
             public bool UseSelectedAsOutput { get; set; }
         }
         private SelectRepoForm _repoForm = new();
@@ -110,14 +116,14 @@ namespace AiGeneratedCodeDocs.Components
             _isBusy = true;
             StateHasChanged();
             await Task.Delay(1);
-            await GenerateCodeDoc(selectRepoForm.RepoDir.DirFullPath);
+            await GenerateCodeDocFromDir(selectRepoForm.RepoDir.DirFullPath);
             _isBusy = false;
             StateHasChanged();
         }
-        
+
         private int _inputTokens = 0;
         private string? _outputPath;
-        private async Task GenerateCodeDoc(string path)
+        private async Task GenerateCodeDocFromDir(string path)
         {
             var files = Directory.EnumerateFiles(path, "*.*", searchOption: SearchOption.AllDirectories).Where(x => x.EndsWith(".razor") || x.EndsWith(".cs") && !x.EndsWith(".g.cs"));
             var sb = new StringBuilder();
@@ -134,10 +140,15 @@ namespace AiGeneratedCodeDocs.Components
             }
             _repoForm.OutputDir ??= path;
             var markdown = sb.ToString();
-            var fileName = $"Readme.md";
-            if (!Directory.Exists(_repoForm.OutputDir))
-                Directory.CreateDirectory(_repoForm.OutputDir);
-            string outputPath = Path.Combine(_repoForm.OutputDir ?? "", fileName);
+            var fileName = $"{_repoForm.OutputFileName}Readme.md";
+            string? dirPath = Path.GetDirectoryName(_repoForm.OutputDir);
+
+            if (!Directory.Exists(dirPath))
+            {
+                Directory.CreateDirectory(dirPath);
+            }
+
+            string outputPath = Path.Combine(dirPath ?? "", fileName);
             _outputPath = outputPath;
             await File.WriteAllTextAsync(outputPath, markdown);
         }
@@ -150,6 +161,8 @@ namespace AiGeneratedCodeDocs.Components
         public Dictionary<string, string> ReadFilesInDirectory(string directoryPath)
         {
             Logger.LogInformation("Reading files in directory: {directoryPath}", directoryPath);
+            if (File.Exists(directoryPath))
+                return ReadFile(directoryPath);
             var csFiles = Directory.GetFiles(directoryPath, "*.cs", SearchOption.AllDirectories)
                 .ToList();
 
@@ -167,7 +180,7 @@ namespace AiGeneratedCodeDocs.Components
                 {
                     if (fileTexts.ContainsKey(fileName))
                     {
-                        fileTexts[fileName] += File.ReadAllText(file);
+                        fileTexts[fileName] += $"\n@code {{\n{File.ReadAllText(file)}\n}}";
                     }
                     else
                     {
@@ -179,6 +192,27 @@ namespace AiGeneratedCodeDocs.Components
                     fileTexts[fileName] = File.ReadAllText(file);
                 }
             }
+
+            return fileTexts;
+        }
+        private Dictionary<string, string> ReadFile(string path)
+        {
+            var fileTexts = new Dictionary<string, string>();
+            var fileInfo = new System.IO.FileInfo(path);
+            if (fileInfo.Extension == ".razor")
+            {
+                fileTexts.Add(fileInfo.Name, File.ReadAllText(fileInfo.FullName));
+                var directory = fileInfo.Directory!.FullName;
+                string file = $"{fileInfo.FullName}.cs";
+                var hasPartial = Directory.GetFiles(directory).Contains(file);
+                if (hasPartial)
+                    fileTexts[fileInfo.Name] += $"\n@code {{\n{File.ReadAllText(file)}\n}}";
+            }
+            else
+            {
+                fileTexts.Add(fileInfo.Name, File.ReadAllText(fileInfo.FullName));
+            }
+
 
             return fileTexts;
         }
@@ -197,7 +231,7 @@ namespace AiGeneratedCodeDocs.Components
             {
                 var name = Path.GetFileName(entry);
 
-                return !name.StartsWith(".") && name != "bin" && name != "obj";
+                return !name.StartsWith('.') && name != "bin" && name != "obj";
             }).Select(x => new DirInfo(Path.GetFileName(x), x)).ToList();
             args.Children.Text = GetTextForNode;
             if (directory?.DirFullPath?.Contains(".csproj") == true)
@@ -225,12 +259,17 @@ namespace AiGeneratedCodeDocs.Components
         }
 
         private string selectedDir = "";
+        private void SelectDir()
+        {
+            var dir = FilePickerService.ShowOpenFolderDialog();
+            _setRepoForm.RepoPath = dir;
+        }
         private void OnSelected(object item)
         {
             if (item is not DirInfo dirInfo) return;
             selectedDir = dirInfo.DirFullPath;
             _repoForm.RepoDir = dirInfo;
-            
+
             StateHasChanged();
 
         }

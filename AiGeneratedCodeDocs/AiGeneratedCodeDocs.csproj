@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net7.0-windows7.0</TargetFramework>
+        <TargetFramework>net8.0-windows7.0</TargetFramework>
         <Nullable>enable</Nullable>
         <UseWindowsForms>true</UseWindowsForms>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -20,46 +20,45 @@
 
     <ItemGroup>
       <None Remove="Components\SettingsDialog.razor.css" />
-      <None Remove="Skills\CodeDocGenSkill\DocumentCode\skprompt.txt" />
-      <None Remove="Skills\CodeDocGenSkill\Summarize\skprompt.txt" />
+      <None Remove="Plugins\CodeDocGenPlugin\DocumentCode\skprompt.txt" />
+      <None Remove="Plugins\CodeDocGenPlugin\Summarize\skprompt.txt" />
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="Skills\CodeDocGenSkill\DocumentCode\skprompt.txt">
+      <Content Include="Plugins\**\skprompt.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
-      <Content Include="Skills\CodeDocGenSkill\Summarize\skprompt.txt">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+     
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AI.Dev.OpenAI.GPT" Version="1.0.2" />
-        <PackageReference Include="Markdig.Signed" Version="0.31.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="7.0.92" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="7.0.0" />
-        <PackageReference Include="Microsoft.SemanticKernel" Version="0.17.230711.7-preview" />
-        <PackageReference Include="Radzen.Blazor" Version="4.13.5" />
+      <Compile Remove="Skills\**" />
+      <Content Remove="Skills\**" />
+      <EmbeddedResource Remove="Skills\**" />
+      <None Remove="Skills\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Markdig" Version="0.36.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="8.0.14" />
+        <PackageReference Include="Microsoft.CodeAnalysis" Version="4.9.2" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Razor" Version="6.0.28" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.3.0" />
+        <PackageReference Include="Microsoft.SemanticKernel" Version="1.7.1" />
+        <PackageReference Include="Radzen.Blazor" Version="4.29.5" />
         <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
+        <PackageReference Include="Tiktoken" Version="1.2.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Reference Include="OpenAIDotNet">
-        <HintPath>..\..\BlazorWithSematicKernel\BlazorWithSematicKernel\Libs\OpenAIDotNet.dll</HintPath>
-      </Reference>
-    </ItemGroup>
+   
 
     <ItemGroup>
-        <Content Update="Skills\CodeDocGenSkill\DocumentCode\config.json">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Update="Skills\CodeDocGenSkill\Summarize\config.json">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
         <Content Update="wwwroot\css\app.css">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>

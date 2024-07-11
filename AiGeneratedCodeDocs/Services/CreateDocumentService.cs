@@ -4,50 +4,58 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
+using System.Net;
 
 namespace AiGeneratedCodeDocs.Services
 {
     public class CreateDocumentService
     {
         private StringBuilder _docBuilder;
+        private StringBuilder _summaryBuilder;
         private readonly ILogger<CreateDocumentService> _logger; 
         private readonly IConfiguration _configuration;
-        private IKernel _kernel;
-        public CreateDocumentService(ILogger<CreateDocumentService> logger, IConfiguration configuration)
+        private Kernel _kernel;
+        private readonly AppState _appState;
+        public CreateDocumentService(ILogger<CreateDocumentService> logger, IConfiguration configuration, AppState appState)
         {
+            _appState = appState;
             _docBuilder = new StringBuilder("Previous Files:\n");
+            _summaryBuilder = new StringBuilder();
             _logger = logger;
             _logger.LogInformation("CreateDocumentService Initialized");
             _configuration = configuration;
-            var deploymentName = _configuration["ChatDeployment"];
-            var apiKey = _configuration["ApiKey"];
-            var endpoint = _configuration["Endpoint"];
+            var deploymentName = _configuration["AzureOpenAI:Gpt4DeploymentName"];
+            var apiKey = _configuration["AzureOpenAI:ApiKey"];
+            var endpoint = _configuration["AzureOpenAI:Endpoint"];
             if (deploymentName is null || apiKey is null || endpoint is null)
                 throw new ArgumentException($"Azure OpenAI Deployment name, endpoint, and/or Api key is missing.");
-            _kernel = Kernel.Builder
-                .WithLogger(_logger)
+            IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
+            kernelBuilder.Services.ConfigureHttpClientDefaults(c =>
+            {
+                c.ConfigureHttpClient(client =>
+                {
+                    client.Timeout = TimeSpan.FromMinutes(4);
+                });
+                c.AddStandardResilienceHandler().Configure(o =>
+                {
+                    o.Retry.ShouldHandle = args => ValueTask.FromResult(args.Outcome.Result?.StatusCode is HttpStatusCode.TooManyRequests);
+                    o.Retry.BackoffType = DelayBackoffType.Exponential;
+                    o.AttemptTimeout = new HttpTimeoutStrategyOptions { Timeout = TimeSpan.FromMinutes(5) };
+                    o.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(10);
+                    o.TotalRequestTimeout = new HttpTimeoutStrategyOptions { Timeout = TimeSpan.FromMinutes(20) };
+                });
+            });
+            _kernel = kernelBuilder
                 //.WithOpenAIChatCompletionService("gpt-3.5-turbo-16k", _configuration["OPENAI_API_KEY"], alsoAsTextCompletion: true)
-                .WithAzureChatCompletionService(deploymentName, endpoint, apiKey, alsoAsTextCompletion:true)
+                .AddAzureOpenAIChatCompletion(deploymentName, endpoint, apiKey)
                 .Build();
+            _appState = appState;
         }
-        public static string SkillsDirectoryPath => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory(), "Skills");
-        private const string MkDownDocSysPromptText = """
- You are a Code Documentation Generator. Use the previously generated documentation summary as your context guide.
-    <summary>
-    {{$summary}}
-    </summary>
-Description: You are an expert in the all programming language and their associated frameworks. Your job is to explain snippets of code and explain clearly and in plain language what the code does USING MARKDOWN (.md) FORMAT ONLY. Assume you're generating documentation for someone who knows how to code, but is unfamiliar with the code base."
-                      
-Additional Instructions:
-    - Never use a markdown heading level 1 (#). Only use heading level 2 (##) or lower.
-    - The text will have a comment at the top of the file that is the file name. Use the file name as a MARKDOWN heading level 2 (##). 
-    
-YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
-
-<code>
-{{$code}}
-</code>
-""";
+        public static string PluginDirectoryPath => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory(), "Plugins");
+        
         /// <summary>
         /// Uses Azure OpenAI with Semantic Kernel to generate Markdown documents from code
         /// </summary>
@@ -57,7 +65,7 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
         {
             
             var docTokens = Helpers.GetTokens(_docBuilder.ToString());
-            var sysTokens = Helpers.GetTokens(MkDownDocSysPromptText);
+            var sysTokens = 550;
             var inputTokens = Helpers.GetTokens(code);
             string doc;
             var requiresDocSummary = docTokens + sysTokens + inputTokens + MaxResponseTokens > MaxModelWindow;
@@ -84,15 +92,30 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
             }
             return await GetMarkdownFromAi(code, doc);
         }
-
+        public async Task<string> SummarizeMarkdownFiles(IEnumerable<string> markdownFilePaths)
+        {
+            var sb = new StringBuilder();
+            foreach (var path in markdownFilePaths)
+            {
+                var content = await File.ReadAllTextAsync(path);
+                //var summary = await Summarize(content);
+                //sb.AppendLine($"## {Path.GetFileNameWithoutExtension(path)}");
+                sb.AppendLine(content);
+            }
+            return sb.ToString();
+        }
         private async Task<string> Summarize(string document)
         {
             var oldDocTokens = Helpers.GetTokens(document);
             _logger.LogInformation("Summarizing Document of Token Length: {oldDocTokens}", oldDocTokens);
-            var docSkill = _kernel.ImportSemanticSkillFromDirectory(SkillsDirectoryPath, "CodeDocGenSkill");
-            
-            var result = await _kernel.RunAsync(document, docSkill["Summarize"]);
-            var content = result.Result;
+            //var summerizer = _kernel.ImportPluginFromPromptDirectory(Path.Combine(PluginDirectoryPath, "CodeDocGenPlugin"), "CodeDocGenPlugin");
+            var plugin = _kernel.Plugins.FirstOrDefault(p => p.Name == "CodeDocGenPlugin");
+            if (plugin == null)
+            {
+                plugin = _kernel.ImportPluginFromPromptDirectory(Path.Combine(PluginDirectoryPath, "CodeDocGenPlugin"), "CodeDocGenPlugin");
+            }
+            var result = await _kernel.InvokeAsync(plugin["Summarize"], new() { ["input"] = document});
+            var content = result.GetValue<string>();
             _logger.LogInformation("Document summary completed.\nSummary:\n{content}", content);
             var newDocTokens = Helpers.GetTokens(content);
             _logger.LogInformation("Summary Generated. Token Length: {newDocTokens}", newDocTokens);
@@ -101,8 +124,8 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
 
         private const int MinTokens = 2000;
         private const int MaxTokens = 3000;
-        private const int MaxResponseTokens = 1500;
-        private const int MaxModelWindow = 16384;
+        private const int MaxResponseTokens = 4000;
+        private const int MaxModelWindow = 120000;
 
         public static List<string> SplitCodeToSections(string code, int minTokens = 0)
         {
@@ -153,12 +176,25 @@ YOUR RESPONSE WILL ALWAYS BE IN MARKDOWN FORMAT
         }
         private async Task<string> GetMarkdownFromAi(string code, string doc)
         {
-            var docSkill = _kernel.ImportSemanticSkillFromDirectory(SkillsDirectoryPath, "CodeDocGenSkill");
-            var ctx = _kernel.CreateNewContext();
-            ctx.Variables["summary"] = doc;
-            ctx.Variables["code"] = code;
-            var result = await _kernel.RunAsync(ctx.Variables, docSkill["DocumentCode"]);
-            var content = result.Result;
+            var plugin = _kernel.Plugins.FirstOrDefault(p => p.Name == "CodeDocGenPlugin");
+            if (plugin == null)
+            {
+                plugin = _kernel.ImportPluginFromPromptDirectory(Path.Combine(PluginDirectoryPath, "CodeDocGenPlugin"), "CodeDocGenPlugin");
+            }
+            _summaryBuilder = new StringBuilder();
+            _summaryBuilder.AppendLine("Previous Summaries: \n");
+            _summaryBuilder.AppendLine(_appState.PreviousSummaries);
+            _summaryBuilder.AppendLine("Current Summary: \n");
+            _summaryBuilder.AppendLine(doc);
+            var args = new KernelArguments
+            {
+                ["summary"] = doc,
+                ["code"] = code,
+                ["domainDescription"] = _appState.DomainDescription,
+                ["technicalDescription"] = _appState.TechnicalDetails
+            };
+            var result = await _kernel.InvokeAsync(plugin["DocumentCode"], args);
+            var content = result.GetValue<string>();
             Console.WriteLine(content);
             _docBuilder.AppendLine(content);
             _docBuilder.AppendLine();
